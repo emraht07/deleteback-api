@@ -2,20 +2,17 @@ import dotenv from 'dotenv';
 dotenv.config();
 import Pocketbase from 'pocketbase';
 import logger from './logger.js';
-import { Agent } from 'undici';
+
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
 const POCKETBASE_HOST = `https://${process.env.WEBSITE_DOMAIN}/hcgi/platform`;
-
-const insecureDispatcher = new Agent({
-    connect: { rejectUnauthorized: false }
-});
 
 async function waitForHealth({ retries = 10, delayMs = 2000 } = {}) {
     for (let i = 1; i <= retries; i++) {
         try {
             const response = await fetch(`${POCKETBASE_HOST}/api/health`, {
                 method: 'HEAD',
-                dispatcher: insecureDispatcher,
+                signal: AbortSignal.timeout(5000),
             });
             if (response.ok) return;
         } catch (err) {
